@@ -57,63 +57,11 @@ function fetchUserProfile(userId) {
   });
 }
 
-// Utility to render results into the #results element
-function renderResults(title, items, durationMs) {
-  const out = document.getElementById('results');
-  const container = document.createElement('div');
-  container.style.border = '1px solid #ccc';
-  container.style.padding = '0.5rem';
-  container.style.marginBottom = '0.5rem';
-
-  const heading = document.createElement('strong');
-  heading.textContent = `${title} (took ${durationMs} ms)`;
-  container.appendChild(heading);
-
-  const ul = document.createElement('ul');
-  items.forEach(it => {
-    const li = document.createElement('li');
-    li.textContent = `${it.name} — simulated ${it.delayMs}ms — resolved at ${it.time}`;
-    ul.appendChild(li);
-  });
-  container.appendChild(ul);
-  out.prepend(container);
-}
 
 // Disable/enable buttons while running
 function setRunning(isRunning) {
   document.getElementById('sequentialBtn').disabled = isRunning;
   document.getElementById('parallelBtn').disabled = isRunning;
-}
-
-// Sequential: wait for each fetch to finish before starting the next
-async function runSequential() {
-  setRunning(true);
-  const delays = [800, 600, 400];
-  const start = performance.now();
-  const results = [];
-  for (let i = 0; i < delays.length; i++) {
-    // Each fetch waits for the previous to finish
-    // In a real scenario replace simulatedFetch with fetch(url)
-    const res = await simulatedFetch(`item-${i + 1}`, delays[i]);
-    results.push(res);
-  }
-  const duration = Math.round(performance.now() - start);
-  renderResults('Sequential fetches', results, duration);
-  setRunning(false);
-}
-
-// Parallel: start all fetches at once and wait for all to finish
-async function runParallel() {
-  setRunning(true);
-  const delays = [800, 600, 400];
-  const start = performance.now();
-  // Start all promises without awaiting
-  const promises = delays.map((d, i) => simulatedFetch(`item-${i + 1}`, d));
-  // Wait for all to complete
-  const results = await Promise.all(promises);
-  const duration = Math.round(performance.now() - start);
-  renderResults('Parallel fetches (Promise.all)', results, duration);
-  setRunning(false);
 }
 
 // Wire buttons when DOM is ready
@@ -383,80 +331,4 @@ window._lab6.fetchDataSequentially = fetchDataSequentially;
 window._lab6.fetchDataInParallel = fetchDataInParallel;
 window._lab6.fetchDataWithErrorHandling = fetchDataWithErrorHandling;
 
-// Task D: fetchDataSequentially(userId)
-// Fetches profile, posts, and comments one after another
-async function fetchDataSequentially(userId) {
-  console.log('Starting sequential fetch...');
-  const startTime = Date.now();
-
-  try {
-    // Step 1 - Await fetchUserProfile
-    const profile = await fetchUserProfile(userId);
-    console.log('User profile retrieved');
-
-    // Step 2 - Await fetchUserPosts
-    const posts = await fetchUserPosts(userId);
-    console.log('Posts retrieved');
-
-    // Step 3 - Loop through posts and await fetchPostComments for each
-    const postsWithComments = [];
-    for (const post of posts) {
-      const comments = await fetchPostComments(post.postId);
-      console.log(`Comments retrieved for post ${post.postId}`);
-      postsWithComments.push({ ...post, comments });
-    }
-
-    const endTime = Date.now();
-    console.log(`Sequential fetch took ${endTime - startTime}ms`);
-
-    // Return all data combined
-    return {
-      profile,
-      posts: postsWithComments,
-      durationMs: endTime - startTime,
-    };
-  } catch (error) {
-    console.error('Error in sequential fetch:', error.message);
-    throw error;
-  }
-}
-
-// Export sequential fetch function
-window._lab6.fetchDataSequentially = fetchDataSequentially;
-
-// Task E: fetchDataInParallel(userId)
-// Fetches profile and posts in parallel, then fetches all comments for posts in parallel
-async function fetchDataInParallel(userId) {
-  console.log('Starting parallel fetch...');
-  const startTime = Date.now();
-
-  try {
-    // Fetch user profile and posts at the same time
-    const [profile, posts] = await Promise.all([
-      fetchUserProfile(userId),
-      fetchUserPosts(userId),
-    ]);
-    console.log('User and posts retrieved simultaneously');
-
-    // Fetch comments for all posts in parallel
-    const commentsPromises = posts.map((post) => fetchPostComments(post.postId));
-    const commentsArrays = await Promise.all(commentsPromises);
-    const postsWithComments = posts.map((post, idx) => ({ ...post, comments: commentsArrays[idx] }));
-
-    const endTime = Date.now();
-    console.log(`Parallel fetch took ${endTime - startTime}ms`);
-
-    // Return combined data
-    return {
-      profile,
-      posts: postsWithComments,
-      durationMs: endTime - startTime,
-    };
-  } catch (error) {
-    console.error('Error in parallel fetch:', error.message);
-    throw error;
-  }
-}
-
-// Export parallel fetch function
-window._lab6.fetchDataInParallel = fetchDataInParallel;
+// ...existing code...
