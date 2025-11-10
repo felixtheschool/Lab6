@@ -65,6 +65,53 @@ function setRunning(isRunning) {
 }
 
 // Wire buttons when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const sequentialBtn = document.getElementById('sequentialBtn');
+    const parallelBtn = document.getElementById('parallelBtn');
+    const resultsContainer = document.getElementById('results');
+
+    sequentialBtn.addEventListener('click', async () => {
+        setRunning(true);
+        try {
+            const startTime = Date.now();
+            const userContent = await getUserContent(1);
+            const endTime = Date.now();
+            displayResults({
+                ...userContent,
+                durationMs: endTime - startTime
+            }, resultsContainer);
+        } catch (error) {
+            displayResults({
+                errors: [{ step: 'Sequential fetch', message: error.message }]
+            }, resultsContainer);
+        } finally {
+            setRunning(false);
+        }
+    });
+
+    parallelBtn.addEventListener('click', async () => {
+        setRunning(true);
+        try {
+            const startTime = Date.now();
+            const [profile, posts] = await Promise.all([
+                fetchUserProfile(1),
+                fetchUserPosts(1)
+            ]);
+            const endTime = Date.now();
+            displayResults({
+                profile,
+                posts,
+                durationMs: endTime - startTime
+            }, resultsContainer);
+        } catch (error) {
+            displayResults({
+                errors: [{ step: 'Parallel fetch', message: error.message }]
+            }, resultsContainer);
+        } finally {
+            setRunning(false);
+        }
+    });
+});
 
 // Helper to format and display results
 function displayResults(data, container) {
@@ -332,3 +379,43 @@ window._lab6.fetchDataInParallel = fetchDataInParallel;
 window._lab6.fetchDataWithErrorHandling = fetchDataWithErrorHandling;
 
 // ...existing code...
+// Add event listeners when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  const sequentialBtn = document.getElementById('sequentialBtn');
+  const parallelBtn = document.getElementById('parallelBtn');
+  const resultsContainer = document.getElementById('results');
+
+  sequentialBtn.addEventListener('click', async () => {
+    setRunning(true);
+    try {
+      const startTime = Date.now();
+      const userId = 1; // Using a sample user ID
+      const data = await getUserContent(userId);
+      data.durationMs = Date.now() - startTime;
+      displayResults(data, resultsContainer);
+    } catch (error) {
+      displayResults({ errors: [{ step: 'Sequential fetch', message: error.message }] }, resultsContainer);
+    } finally {
+      setRunning(false);
+    }
+  });
+
+  parallelBtn.addEventListener('click', async () => {
+    setRunning(true);
+    try {
+      const startTime = Date.now();
+      // Fetch multiple users in parallel (example with users 1, 2, and 3)
+      const userIds = [1, 2, 3];
+      const results = await Promise.all(userIds.map(id => getUserContent(id)));
+      const data = {
+        users: results,
+        durationMs: Date.now() - startTime
+      };
+      displayResults(data, resultsContainer);
+    } catch (error) {
+      displayResults({ errors: [{ step: 'Parallel fetch', message: error.message }] }, resultsContainer);
+    } finally {
+      setRunning(false);
+    }
+  });
+});
